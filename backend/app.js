@@ -48,7 +48,39 @@ mongoose.connect(process.env.MONGO_URI, {
       res.status(500).json({ error: err.message });
     }
   });
+
+    // Delete a contact
+app.delete('/api/contacts/:userId/:contactId', async (req, res) => {
+  const { userId, contactId } = req.params;
   
+  try {
+    const userContacts = await Contact.findOne({ userId });
+    
+    if (!userContacts) {
+      return res.status(404).json({ error: "User contacts not found" });
+    }
+    
+    // Find the index of the contact to delete
+    const contactIndex = userContacts.contacts.findIndex(
+      contact => contact._id.toString() === contactId
+    );
+    
+    if (contactIndex === -1) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+    
+    // Remove the contact from the array
+    userContacts.contacts.splice(contactIndex, 1);
+    
+    // Save the updated contacts
+    await userContacts.save();
+    
+    res.json(userContacts.contacts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
   // Start server
   app.listen(5000, () => {
     console.log('Server started on port 5000');
